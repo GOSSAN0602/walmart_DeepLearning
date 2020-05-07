@@ -59,6 +59,12 @@ train_t = cut_outrange(mm.transform(train_t.T).T)
 valid_x = cut_outrange(mm.transform(valid_x.T).T)
 valid_t = cut_outrange(mm.transform(valid_t.T).T)
 
+# reshape to (Batch, Dim, Length)
+train_x = train_x.reshape(-1,1,args.use_days)
+train_t = train_t.reshape(-1,1,28)
+valid_x = valid_x.reshape(-1,1,args.use_days)
+valid_t = valid_t.reshape(-1,1,28)
+
 # numpy -> tensor
 tr_x = Variable(torch.from_numpy(train_x).float(), requires_grad=True)
 tr_t = Variable(torch.from_numpy(train_t).float(), requires_grad=False)
@@ -66,5 +72,5 @@ va_x = Variable(torch.from_numpy(valid_x).float(), requires_grad=True)
 va_t = Variable(torch.from_numpy(valid_t).float(), requires_grad=False)
 
 # define NN
-my_model = simple_Net()
+my_model = simple_Net(args)
 rnn_trainer(args, my_model, tr_x, tr_t, va_x, va_t)

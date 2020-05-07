@@ -36,7 +36,7 @@ def rnn_trainer(args, model, tr_x, tr_t, va_x, va_t):
     for i in range(args.n_epoch):
         batch_idx = np.random.permutation(batch_idx)
         model.train()
-        for iter in range(n_iter):
+        for iter in range(n_iter-1):
             # initialize optimizer
             optimizer.zero_grad()
             use_idx = batch_idx[iter*batch_size:(iter+1)*batch_size]
@@ -50,7 +50,7 @@ def rnn_trainer(args, model, tr_x, tr_t, va_x, va_t):
         if (i+1) % interval ==0:
             model.eval()
             loss_tr[int(i/interval)] = loss.item()
-            va_loss, _ = model(va_x, va_t)
+            va_loss, _ = model(va_x, va_t, criterion)
             loss_va[int(i/interval)] = va_loss.item()
             if loss_va[int(i/interval)] <= loss_va[:(1+int(i/interval))].min():
                 print(f'epoch: {i+1}  score improved  {loss_va[int(i/interval)]}')
