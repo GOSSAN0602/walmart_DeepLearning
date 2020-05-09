@@ -64,6 +64,3 @@ def rnn_trainer(args, model, tr_x, tr_t, va_x, va_t, log_dir):
                 ax.legend()
                 plt.savefig(log_dir+'/loss_curve.png')
                 np.save(log_dir+'/pred_valid.npy', pred_seq)
-                # y_oof[va_idx] = mm.inverse_transform(net(va_x).detach().numpy()).reshape(-1,)
-                # y_preds[fold_n] = mm.inverse_transform(net(Variable(torch.from_numpy(test_x).float())).detach().numpy()).reshape(-1,)
-    return loss_tr, loss_va, 
