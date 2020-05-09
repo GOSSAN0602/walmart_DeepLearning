@@ -11,7 +11,7 @@ import torch.nn.functional as F
 class simple_Net(nn.Module):
     def __init__(self, args):
         super(simple_Net, self).__init__()
-        self.layer1 = nn.LSTM(1,1,1,True,False,0.1,False)
+        self.layer1 = nn.LSTM(1,1,1,True,False,0,False)
     
     def __call__(self, x, t, criterion):
         h0 = torch.randn(1, x.shape[0], 1)
@@ -32,7 +32,7 @@ class simple_Net(nn.Module):
         pred_seq = np.zeros([t.shape[0], steps])
         loss = 0.0
         _x, (hn, cn) = self.layer1(x[:,:,-1].reshape(1,-1,1), (hn, cn))
-        loss += criterion(_x, t[:,:,0:1])
+        loss += criterion(_x, t[:,:,0:1].reshape(1,-1,1))
         pred_seq[:,0:1] = _x.detach().numpy()
         for i in range(steps-1):
             _x, (hn, cn) = self.layer1(_x, (hn, cn))

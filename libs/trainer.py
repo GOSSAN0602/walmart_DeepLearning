@@ -1,5 +1,7 @@
 import numpy as np
 import argparse
+import pandas as pd
+import matplotlib.pyplot as plt
 
 import torch
 from torch.autograd import Variable
@@ -18,7 +20,7 @@ def set_optimizer(args, model):
         return RAdam(model.parameters(), lr = args.lr, betas=(args.beta1,args.beta2))
 
 
-def rnn_trainer(args, model, tr_x, tr_t, va_x, va_t):
+def rnn_trainer(args, model, tr_x, tr_t, va_x, va_t, log_dir):
     # config for train NN
     n_iter = int(tr_x.shape[0] / args.batch_size)+1
     batch_idx = np.arange(tr_x.shape[0])
@@ -50,9 +52,18 @@ def rnn_trainer(args, model, tr_x, tr_t, va_x, va_t):
         if (i+1) % interval ==0:
             model.eval()
             loss_tr[int(i/interval)] = loss.item()
-            va_loss, _ = model(va_x, va_t, criterion)
+            va_loss, pred_seq = model(va_x, va_t, criterion)
             loss_va[int(i/interval)] = va_loss.item()
+            #plot_loss(loss_tr,loss_va)
             if loss_va[int(i/interval)] <= loss_va[:(1+int(i/interval))].min():
                 print(f'epoch: {i+1}  score improved  {loss_va[int(i/interval)]}')
+                fig = plt.figure(figsize=(12, 8))
+                ax = fig.add_subplot(111)
+                ax.plot(np.arange(interval, interval+i+1,10),loss_tr[:int((i+1)/interval)], label="train")
+                ax.plot(np.arange(interval, interval+i+1,10),loss_va[:int((i+1)/interval)], label="valid")
+                ax.legend()
+                plt.savefig(log_dir+'/loss_curve.png')
+                np.save(log_dir+'/pred_valid.npy', pred_seq)
                 # y_oof[va_idx] = mm.inverse_transform(net(va_x).detach().numpy()).reshape(-1,)
                 # y_preds[fold_n] = mm.inverse_transform(net(Variable(torch.from_numpy(test_x).float())).detach().numpy()).reshape(-1,)
+    return loss_tr, loss_va, 

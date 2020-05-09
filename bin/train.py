@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import argparse
+import datetime
 
 import matplotlib.pyplot as plt
 import os
@@ -27,6 +28,7 @@ from sklearn.metrics import mean_squared_error
 # set params
 parser = argparse.ArgumentParser(description='Walmart NN')
 parser.add_argument('--debug', type=bool, default=True, help='Length Train Data')
+parser.add_argument('--INPUT_DIR', type=str, default='../input/m5-forecasting-accuracy', help='Dataset dir')
 parser.add_argument('--use_days', type=int, default=365, help='Length Train Data')
 parser.add_argument('--n_epoch', type=int, default=100)
 parser.add_argument('--interval', type=int, default=10)
@@ -37,8 +39,14 @@ parser.add_argument('--beta1', type=float, default=0.9, help='param of adam')
 parser.add_argument('--beta2', type=float, default=0.999, help='param of adam')
 args = parser.parse_args()
 
+# log
+log_name = datetime.datetime.now().strftime('%m_%d_%H_%M_%S')
+log_dir = f'./log/{log_name}'
+os.mkdir(log_dir)
+#os.mkdir(f'../model_weight/{log_name}')
+
 # load data
-data = pd.read_csv('../input/m5-forecasting-accuracy/sales_train_validation.csv')
+data = pd.read_csv(f'{args.INPUT_DIR}/sales_train_validation.csv')
 if args.debug:
     print('*******DEBUG*********')
     data = data[(data['store_id']=='CA_1') & (data['dept_id']=='HOBBIES_1')]
@@ -73,4 +81,4 @@ va_t = Variable(torch.from_numpy(valid_t).float(), requires_grad=False)
 
 # define NN
 my_model = simple_Net(args)
-rnn_trainer(args, my_model, tr_x, tr_t, va_x, va_t)
+rnn_trainer(args, my_model, tr_x, tr_t, va_x, va_t, log_dir)
