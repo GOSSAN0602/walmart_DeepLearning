@@ -24,15 +24,15 @@ from sklearn.preprocessing import MinMaxScaler
 from sklearn.metrics import mean_squared_error
 
 
-
 # set params
 parser = argparse.ArgumentParser(description='Walmart NN')
 parser.add_argument('--debug', type=bool, default=True, help='Length Train Data')
 parser.add_argument('--INPUT_DIR', type=str, default='../input/m5-forecasting-accuracy', help='Dataset dir')
+parser.add_argument('--store_id', type=str, default='CA_1', help='data of store_id')
 parser.add_argument('--use_days', type=int, default=365, help='Length Train Data')
 parser.add_argument('--n_epoch', type=int, default=100)
 parser.add_argument('--interval', type=int, default=10)
-parser.add_argument('--batch_size', type=int, default=256)
+parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--optimizer', type=str, default='Adam', help='choose from Adam, RAdam, SGD')
 parser.add_argument('--lr', type=float, default=0.01, help='learning rate')
 parser.add_argument('--beta1', type=float, default=0.9, help='param of adam')
@@ -46,10 +46,15 @@ os.mkdir(log_dir)
 #os.mkdir(f'../model_weight/{log_name}')
 
 # load data
-data = pd.read_csv(f'{args.INPUT_DIR}/sales_train_validation.csv')
+iter_csv = pd.read_csv(f'{args.INPUT_DIR}/sales_train_validation.csv', iterator=True, chunksize=1000)
+data = pd.concat([chunk[chunk['store_id'] == args.store_id] for chunk in iter_csv])
 if args.debug:
     print('*******DEBUG*********')
-    data = data[(data['store_id']=='CA_1') & (data['dept_id']=='HOBBIES_1')]
+    data = data.sample(n=args.batch_size*2, random_state=0)
+
+dept_list = data["dept_id"].unique()
+cat_list = data["cat_id"].unique()
+
 train_x = np.array(data.iloc[:, -1 * (28 * 2 + args.use_days) : -28 * 2])
 train_t = np.array(data.iloc[:,  -28 * 2:-28])
 valid_x = np.array(data.iloc[:, -1 * (28 + args.use_days) : -28])
