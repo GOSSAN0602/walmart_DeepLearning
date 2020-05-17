@@ -20,7 +20,7 @@ from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 
 from sklearn.model_selection import KFold
-from sklearn.preprocessing import MinMaxScaler
+from sklearn.preprocessing import MinMaxScaler, LabelEncoder
 from sklearn.metrics import mean_squared_error
 
 
@@ -52,9 +52,16 @@ if args.debug:
     print('*******DEBUG*********')
     data = data.sample(n=args.batch_size*2, random_state=0)
 
-dept_list = data["dept_id"].unique()
-cat_list = data["cat_id"].unique()
+# make categorical input
+c_list = ["dept_id","cat_id"]
+MAX_CAT_ID = len(data["cat_id"].unique())
+MAX_DEPT_ID = len(data["dept_id"].unique())
+cat_array = np.zeros([data.shape[0],len(c_list)])
+for i, c in enumerate(c_list):
+    le = LabelEncoder()
+    cat_array[:,i] = le.fit_transform(data[c])
 
+# make numeric input
 train_x = np.array(data.iloc[:, -1 * (28 * 2 + args.use_days) : -28 * 2])
 train_t = np.array(data.iloc[:,  -28 * 2:-28])
 valid_x = np.array(data.iloc[:, -1 * (28 + args.use_days) : -28])
@@ -83,7 +90,9 @@ tr_x = Variable(torch.from_numpy(train_x).float(), requires_grad=True)
 tr_t = Variable(torch.from_numpy(train_t).float(), requires_grad=False)
 va_x = Variable(torch.from_numpy(valid_x).float(), requires_grad=True)
 va_t = Variable(torch.from_numpy(valid_t).float(), requires_grad=False)
+cat_input = Variable(torch.from_numpy(cat_array).float(), requires_grad=True).long()
 
 # define NN
-my_model = simple_Net(args)
-rnn_trainer(args, my_model, tr_x, tr_t, va_x, va_t, log_dir)
+my_model = dilated_CNN(args, 1, MAX_CAT_ID, MAX_DEPT_ID)
+import pdb;pdb.set_trace()
+dilated_cnn_trainer(args, my_model, tr_x, cat_input, tr_t, va_x, va_t, log_dir)
