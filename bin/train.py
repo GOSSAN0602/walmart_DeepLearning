@@ -82,9 +82,10 @@ valid_t = np.array(data.iloc[:,  -28:])
 train_days_x = np.array(days_data.iloc[:, -1 * (28 * 2 + args.use_days) : -28 * 1]) / np.array(days_data.max().max())
 valid_days_x = np.array(days_data.iloc[:, -1 * (28 + args.use_days) :]) / np.array(days_data.max().max())
 
-## normalizeを書く！！！！！！！
-valid_price_x = normalize(np.array(price_data.iloc[:, -1 * (28 + args.use_days) :]))
-train_price_x = normalize(np.array(price_data.iloc[:, -1 * (28 * 2 + args.use_days) : -28 * 1])
+price_array = np.array(price_data.iloc[:, -1 * (28 * 2 + args.use_days) :])
+price_array = price_array / price_array.max(axis=1).reshape(-1,1)
+train_price_x = price_array[:,: -28 * 1]
+valid_price_x = price_array[:,28:]
 
 # preprocess for NN
 def cut_outrange(input, min=0.05, max=0.95):
@@ -98,21 +99,28 @@ train_t = cut_outrange(mm.transform(train_t.T).T)
 valid_x = cut_outrange(mm.transform(valid_x.T).T)
 valid_t = cut_outrange(mm.transform(valid_t.T).T)
 
-import pdb;pdb.set_trace()
+# padding
+train_x = np.concatenate([train_x,np.zeros([3049,28])],axis=1)
+valid_x = np.concatenate([valid_x,np.zeros([3049,28])],axis=1)
 
-# reshape to (Batch, Dim, Length)
-train_x = train_x.reshape(-1,1,args.use_days)
-train_t = train_t.reshape(-1,28)
-valid_x = valid_x.reshape(-1,1,args.use_days)
-valid_t = valid_t.reshape(-1,28)
+# integrate sells and price
+n_dyn_fea = 4
+input_train_x = np.zeros([train_price_x.shape[0], n_dyn_fea, train_price_x.shape[1]])
+input_valid_x = np.zeros([train_price_x.shape[0], n_dyn_fea, train_price_x.shape[1]])
+input_train_x[:,0] = train_price_x
+input_train_x[:,1] = train_x
+input_train_x[:,2:,:] = train_days_x
+input_valid_x[:,0] = valid_price_x
+input_valid_x[:,1] = valid_x
+input_valid_x[:,2:,:] = valid_days_x
 
 # numpy -> tensor
-tr_x = Variable(torch.from_numpy(train_x).float(), requires_grad=True)
+tr_x = Variable(torch.from_numpy(input_train_x).float(), requires_grad=True)
 tr_t = Variable(torch.from_numpy(train_t).float(), requires_grad=False)
-va_x = Variable(torch.from_numpy(valid_x).float(), requires_grad=True)
+va_x = Variable(torch.from_numpy(input_valid_x).float(), requires_grad=True)
 va_t = Variable(torch.from_numpy(valid_t).float(), requires_grad=False)
 cat_input = Variable(torch.from_numpy(cat_array).float(), requires_grad=True).long()
 
 # define NN
-my_model = dilated_CNN(args, 1, MAX_CAT_ID, MAX_DEPT_ID)
+my_model = dilated_CNN(args, n_dyn_fea, MAX_CAT_ID, MAX_DEPT_ID)
 dilated_cnn_trainer(args, my_model, tr_x, cat_input, tr_t, va_x, va_t, log_dir)

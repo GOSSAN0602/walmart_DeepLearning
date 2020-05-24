@@ -107,7 +107,7 @@ class dilated_CNN(nn.Module):
         self.flatten_out = Flatten()
 
         # layers for concatenating with cat and num features
-        self.dense_concat0 = Linear(in_features=2925, out_features=56)
+        self.dense_concat0 = Linear(in_features=1669, out_features=56)
         self.dense_concat1 = Linear(in_features=56, out_features=n_outputs)
     
     def __call__(self, seq_in, cat_fea_in, t, criterion):
