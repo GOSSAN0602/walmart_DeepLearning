@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import argparse
 import datetime
+import json
 
 import matplotlib.pyplot as plt
 import os
@@ -20,21 +21,21 @@ from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
 
 from sklearn.model_selection import KFold
-from sklearn.preprocessing import MinMaxScaler, LabelEncoder
+from sklearn.preprocessing import MinMaxScaler, LabelEncoder, normalize
 from sklearn.metrics import mean_squared_error
 
 
 # set params
 parser = argparse.ArgumentParser(description='Walmart NN')
-parser.add_argument('--debug', type=bool, default=True, help='Length Train Data')
+parser.add_argument('--debug', type=bool, default=False, help='Length Train Data')
 parser.add_argument('--INPUT_DIR', type=str, default='../input/m5-forecasting-accuracy', help='Dataset dir')
 parser.add_argument('--store_id', type=str, default='CA_1', help='data of store_id')
-parser.add_argument('--use_days', type=int, default=365, help='Length Train Data')
-parser.add_argument('--n_epoch', type=int, default=100)
+parser.add_argument('--use_days', type=int, default=180, help='Length Train Data')
+parser.add_argument('--n_epoch', type=int, default=1000)
 parser.add_argument('--interval', type=int, default=10)
 parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--optimizer', type=str, default='Adam', help='choose from Adam, RAdam, SGD')
-parser.add_argument('--lr', type=float, default=0.01, help='learning rate')
+parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
 parser.add_argument('--beta1', type=float, default=0.9, help='param of adam')
 parser.add_argument('--beta2', type=float, default=0.999, help='param of adam')
 args = parser.parse_args()
@@ -43,6 +44,8 @@ args = parser.parse_args()
 log_name = datetime.datetime.now().strftime('%m_%d_%H_%M_%S')
 log_dir = f'./log/{log_name}'
 os.mkdir(log_dir)
+with open(f"{log_dir}/params.json", mode="w") as f:
+    json.dump(args.__dict__, f, indent=4)
 #os.mkdir(f'../model_weight/{log_name}')
 
 # load data
@@ -51,6 +54,15 @@ data = pd.concat([chunk[chunk['store_id'] == args.store_id] for chunk in iter_cs
 if args.debug:
     print('*******DEBUG*********')
     data = data.sample(n=args.batch_size*2, random_state=0)
+price_data = pd.read_csv(f'{args.INPUT_DIR}/price_{args.store_id}.csv')
+days_data = pd.read_csv(f'{args.INPUT_DIR}/cal_feat.csv')
+state = args.store_id
+state = state[:2]
+days_data = days_data.loc[:,['day_type','snap_'+state]]
+days_data = days_data.T
+# check item_id
+if (data['item_id']==price_data['item_id']).sum() != data.shape[0]:
+    print('*'*50+'order is not match'+'*'*50)
 
 # make categorical input
 c_list = ["dept_id","cat_id"]
@@ -67,6 +79,13 @@ train_t = np.array(data.iloc[:,  -28 * 2:-28])
 valid_x = np.array(data.iloc[:, -1 * (28 + args.use_days) : -28])
 valid_t = np.array(data.iloc[:,  -28:])
 
+train_days_x = np.array(days_data.iloc[:, -1 * (28 * 2 + args.use_days) : -28 * 1]) / np.array(days_data.max().max())
+valid_days_x = np.array(days_data.iloc[:, -1 * (28 + args.use_days) :]) / np.array(days_data.max().max())
+
+## normalizeを書く！！！！！！！
+valid_price_x = normalize(np.array(price_data.iloc[:, -1 * (28 + args.use_days) :]))
+train_price_x = normalize(np.array(price_data.iloc[:, -1 * (28 * 2 + args.use_days) : -28 * 1])
+
 # preprocess for NN
 def cut_outrange(input, min=0.05, max=0.95):
     input = np.where(min > input, 0.05, input)
@@ -79,11 +98,13 @@ train_t = cut_outrange(mm.transform(train_t.T).T)
 valid_x = cut_outrange(mm.transform(valid_x.T).T)
 valid_t = cut_outrange(mm.transform(valid_t.T).T)
 
+import pdb;pdb.set_trace()
+
 # reshape to (Batch, Dim, Length)
 train_x = train_x.reshape(-1,1,args.use_days)
-train_t = train_t.reshape(-1,1,28)
+train_t = train_t.reshape(-1,28)
 valid_x = valid_x.reshape(-1,1,args.use_days)
-valid_t = valid_t.reshape(-1,1,28)
+valid_t = valid_t.reshape(-1,28)
 
 # numpy -> tensor
 tr_x = Variable(torch.from_numpy(train_x).float(), requires_grad=True)
@@ -94,5 +115,4 @@ cat_input = Variable(torch.from_numpy(cat_array).float(), requires_grad=True).lo
 
 # define NN
 my_model = dilated_CNN(args, 1, MAX_CAT_ID, MAX_DEPT_ID)
-import pdb;pdb.set_trace()
 dilated_cnn_trainer(args, my_model, tr_x, cat_input, tr_t, va_x, va_t, log_dir)
