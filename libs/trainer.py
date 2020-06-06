@@ -19,6 +19,14 @@ def set_optimizer(args, model):
     if args.optimizer == 'RAdam':
         return RAdam(model.parameters(), lr = args.lr, betas=(args.beta1,args.beta2))
 
+class RMSELoss(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.mse = nn.MSELoss()
+        
+    def forward(self,yhat,y):
+        return torch.sqrt(self.mse(yhat,y))
+
 
 def rnn_trainer(args, model, tr_x, tr_t, va_x, va_t, log_dir):
     # config for train NN
@@ -30,7 +38,7 @@ def rnn_trainer(args, model, tr_x, tr_t, va_x, va_t, log_dir):
 
     optimizer = set_optimizer(args, model)
     cos_lr_scheduler = lr_scheduler.CosineAnnealingLR(optimizer, T_max=20, eta_min=0.001)
-    criterion = nn.MSELoss()
+    criterion = RMSELoss()
     loss_tr = np.zeros(int(args.n_epoch/interval))
     loss_va = np.zeros(int(args.n_epoch/interval))
 

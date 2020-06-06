@@ -35,9 +35,9 @@ parser.add_argument('--n_epoch', type=int, default=1000)
 parser.add_argument('--interval', type=int, default=10)
 parser.add_argument('--batch_size', type=int, default=32)
 parser.add_argument('--optimizer', type=str, default='Adam', help='choose from Adam, RAdam, SGD')
-parser.add_argument('--lr', type=float, default=0.001, help='learning rate')
+parser.add_argument('--lr', type=float, default=0.0001, help='learning rate')
 parser.add_argument('--beta1', type=float, default=0.9, help='param of adam')
-parser.add_argument('--beta2', type=float, default=0.999, help='param of adam')
+parser.add_argument('--beta2', type=float, default=0.7, help='param of adam')
 args = parser.parse_args()
 
 # log
@@ -120,7 +120,7 @@ tr_t = Variable(torch.from_numpy(train_t).float(), requires_grad=False)
 va_x = Variable(torch.from_numpy(input_valid_x).float(), requires_grad=True)
 va_t = Variable(torch.from_numpy(valid_t).float(), requires_grad=False)
 cat_input = Variable(torch.from_numpy(cat_array).float(), requires_grad=True).long()
-
+# import pdb;pdb.set_trace()
 # define NN
 my_model = dilated_CNN(args, n_dyn_fea, MAX_CAT_ID, MAX_DEPT_ID)
 dilated_cnn_trainer(args, my_model, tr_x, cat_input, tr_t, va_x, va_t, log_dir)
