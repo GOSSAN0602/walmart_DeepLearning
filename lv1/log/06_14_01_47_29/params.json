@@ -1,0 +1,13 @@
+{
+    "debug": false,
+    "INPUT_DIR": "../../input/m5-forecasting-accuracy",
+    "store_id": "CA_1",
+    "use_days": 365,
+    "n_epoch": 200,
+    "interval": 10,
+    "batch_size": 32,
+    "optimizer": "Adam",
+    "lr": 0.01,
+    "beta1": 0.9,
+    "beta2": 0.7
+}
