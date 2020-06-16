@@ -118,7 +118,7 @@ class dilated_CNN(nn.Module):
 
         # out put of conv layers
         conv_out = F.relu(self.conv1d_out(c))
-        conv_out = F.relu(self.dropout_out(conv_out))
+        # conv_out = F.relu(self.dropout_out(conv_out))
         conv_out = F.relu(self.flatten_out(conv_out))
 
         # decode
@@ -130,7 +130,7 @@ class dilated_CNN(nn.Module):
 
 class kaggler_wavenet(nn.Module):
     def __init__(self, args, n_dyn_fea):
-        super(dilated_CNN, self).__init__(
+        super(kaggler_wavenet, self).__init__(
         )
         # params
         seq_len = args.use_days
@@ -138,7 +138,7 @@ class kaggler_wavenet(nn.Module):
         self.n_dilated_layers = 3
         kernel_size = 2
         n_filters = 3
-        n_outputs = 28
+        n_outputs = 28*9
         dropout_rate = 0.1
 
         # Dilated convolutional layers
@@ -148,7 +148,7 @@ class kaggler_wavenet(nn.Module):
         self.conv1d_dilated2 = CausalConv1d(in_channels=n_filters, out_channels=n_filters, kernel_size=kernel_size, dilation=2**3)
 
         # conv output layers
-        self.conv1d_out = CausalConv1d(in_channels=n_filters*2 , out_channels=8, kernel_size=1)
+        self.conv1d_out = CausalConv1d(in_channels=12 , out_channels=8, kernel_size=1)
         self.dropout_out = Dropout(dropout_rate)
         self.flatten_out = Flatten()
 
@@ -169,15 +169,15 @@ class kaggler_wavenet(nn.Module):
         h3 = F.relu(self.conv1d_dilated2(seq_in))
 
         # Skip connections
-        c = torch.cat((h0, h1, h2, h3), 1)
+        c_ = torch.cat((h0, h1, h2, h3), 1)
 
         # out put of conv layers
-        conv_out = F.relu(self.conv1d_out(c))
-        conv_out = F.relu(self.dropout_out(conv_out))
+        conv_out = F.relu(self.conv1d_out(c_))
+        # conv_out = F.relu(self.dropout_out(conv_out))
         conv_out = F.relu(self.flatten_out(conv_out))
 
         # decode
         x = self.dense_concat0(conv_out)
         output = self.dense_concat1(x)
 
-        return output
+        return output.view(-1,9,28)
