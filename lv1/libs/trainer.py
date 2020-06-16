@@ -29,6 +29,20 @@ class RMSELoss(nn.Module):
         return torch.sqrt(self.mse(yhat,y))
 
 
+class PBLoss(nn.Module):
+    def __init__(self):
+        super(PBLoss, self).__init__()
+        self.qs = [0.005, 0.025, 0.165, 0.250, 0.500, 0.750, 0.835, 0.975, 0.995]
+
+    def forward(self,pred,true):
+        qt = torch.tensor(self.qs)
+        # pred = pred.view(-1,9,28)
+        true = true.view(-1,1,28)
+        e = torch.abs(true - pred)
+        v = torch.max(torch.matmul(qt,e),torch.matmul(qt-1,e))
+        loss = torch.mean(v)
+        return loss
+
 def dilated_cnn_trainer(args, model, tr_x, tr_t, va_x, va_t, log_dir, mm):
     # config for train NN
     n_iter = int(tr_x.shape[0] / args.batch_size)+1
@@ -40,7 +54,7 @@ def dilated_cnn_trainer(args, model, tr_x, tr_t, va_x, va_t, log_dir, mm):
     optimizer = set_optimizer(args, model)
     # scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.97)
     # scheduler = lr_scheduler.CosineAnnealingLR(optimizer, T_max=100, eta_min=0.0001)
-    criterion = nn.MSELoss()
+    criterion = PBLoss()
     loss_tr = np.zeros(int(args.n_epoch/interval))
     loss_va = np.zeros(int(args.n_epoch/interval))
 

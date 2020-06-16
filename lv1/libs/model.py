@@ -83,7 +83,7 @@ class dilated_CNN(nn.Module):
         self.n_dilated_layers = 3
         kernel_size = 2
         n_filters = 3
-        n_outputs = 28
+        n_outputs = 28 * 9
         dropout_rate = 0.1
 
         # Dilated convolutional layers
@@ -125,7 +125,7 @@ class dilated_CNN(nn.Module):
         x = self.dense_concat0(conv_out)
         output = self.dense_concat1(x)
 
-        return output
+        return output.view(-1,9,28)
 
 
 class kaggler_wavenet(nn.Module):
