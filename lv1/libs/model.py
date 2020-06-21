@@ -237,27 +237,25 @@ class kaggler_wavenet(nn.Module):
 
 class amane_wavenet(nn.Module):
     def __init__(self, args, n_dyn_fea):
-        super(kaggler_wavenet, self).__init__(
+        super(amane_wavenet, self).__init__(
         )
         # params
         seq_len = args.use_days
         self.n_dyn_fea = n_dyn_fea
-        self.n_dilated_layers = 3
-        kernel_size = 2
         n_filters = 64
         n_outputs = 28
-        dropout_rate = 0.1
 
         # Dilated convolutional layers
         self.conv1d = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=3, dilation=1)
-        self.conv1d_dilated0 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=5, dilation=1)
-        self.conv1d_dilated1 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=7, dilation=1)
-        self.conv1d_dilated2 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=15, dilation=1)
-        self.conv1d_dilated3 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=21, dilation=1)
-        self.conv1d_dilated4 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=51, dilation=1)
-        self.conv1d_dilated5 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=100, dilation=1)
+        self.conv1d_dilated0 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=7, dilation=1)
+        self.conv1d_dilated1 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=14, dilation=1)
+        self.conv1d_dilated2 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=28, dilation=1)
+        self.conv1d_dilated3 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=56, dilation=1)
+        self.conv1d_dilated4 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=84, dilation=1)
+        self.conv1d_dilated5 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=112, dilation=1)
 
         # layers for concatenating with cat and num features
+        self.dropout_out = Dropout(0.05)
         self.dense_concat0 = Linear(in_features=7*n_filters, out_features=int(0.3*7*n_filters))
         self.dense_concat1 = Linear(in_features=int(0.3*7*n_filters), out_features=n_outputs)
     
@@ -280,7 +278,7 @@ class amane_wavenet(nn.Module):
         c_ = torch.cat((h0, h1, h2, h3, h4, h5, h6), 1)
 
         # decode
-        x = self.dense_concat0(c_)
+        x = self.dropout_out(self.dense_concat0(c_))
         output = self.dense_concat1(x)
 
         return output

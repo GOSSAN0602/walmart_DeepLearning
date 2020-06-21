@@ -53,7 +53,7 @@ def dilated_cnn_trainer(args, model, tr_x, tr_t, va_x, va_t, log_dir, mm):
 
     optimizer = set_optimizer(args, model)
     # scheduler = lr_scheduler.ExponentialLR(optimizer, gamma=0.97)
-    # scheduler = lr_scheduler.CosineAnnealingLR(optimizer, T_max=100, eta_min=0.0001)
+    scheduler = lr_scheduler.CosineAnnealingLR(optimizer, T_max=30, eta_min=1e-6)
     criterion = RMSELoss()
     loss_tr = np.zeros(int(args.n_epoch/interval))
     loss_va = np.zeros(int(args.n_epoch/interval))

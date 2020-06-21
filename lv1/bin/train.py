@@ -50,13 +50,14 @@ with open(f"{log_dir}/params.json", mode="w") as f:
 
 # load data
 data = pd.read_csv(f'{args.INPUT_DIR}/sales_train_evaluation.csv')
-days_data = pd.read_csv(f'{args.INPUT_DIR}/../lv1/cal_feat.csv')
-days_data['snap']=days_data.iloc[:,0:3].sum(axis=1)
-days_data = days_data.loc[:,['day_type','snap']]
+days_data = pd.read_csv(f'{args.INPUT_DIR}/../lv1/cal_feat_v2.csv')
+import pdb;pdb.set_trace()
+days_data['snap']=days_data.iloc[:,3:6].sum(axis=1)
+days_data = days_data.loc[:,['wday','sports','ramadan','day_type','snap']]
 for col in days_data.columns:
     days_data.loc[:,col] /= days_data.max()[col]
 days_data = days_data.T
-
+import pdb;pdb.set_trace()
 # remove 2015-12-25
 data = data.drop('d_1792',axis=1)
 days_data = days_data.drop(days_data.columns[1791],axis=1)
@@ -85,7 +86,7 @@ valid_x = cut_outrange(mm.transform(valid_x.T).T)
 valid_t = cut_outrange(mm.transform(valid_t.T).T)
 
 # merge sells & days
-n_dyn_fea = 3
+n_dyn_fea = 6
 input_train_x = np.concatenate([train_x, train_days_x]).reshape(1,n_dyn_fea,args.use_days)
 input_train_t = train_t.reshape(1,28)
 input_valid_x = np.concatenate([valid_x, valid_days_x]).reshape(1,n_dyn_fea,args.use_days)
@@ -100,5 +101,5 @@ va_t = Variable(torch.from_numpy(input_valid_t).float(), requires_grad=False)
 
 # define NN
 #my_model = dilated_CNN(args, n_dyn_fea)
-my_model = kaggler_wavenet(args, n_dyn_fea)
+my_model = amane_wavenet(args, n_dyn_fea)
 dilated_cnn_trainer(args, my_model, tr_x, tr_t, va_x, va_t, log_dir, mm)
