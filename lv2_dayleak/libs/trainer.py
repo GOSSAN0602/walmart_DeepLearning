@@ -75,7 +75,7 @@ def dilated_cnn_trainer(args, model, tr_x, tr_t, va_x, va_t, te_x, log_dir, mm):
             loss.backward()
             optimizer.step()
             # print(loss.item())
-        # scheduler.step()
+        scheduler.step()
         if (i+1) % interval ==0:
             print(f'epoch: {i+1}')
             model.eval()
