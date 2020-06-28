@@ -1,0 +1,23 @@
+{
+    "debug": false,
+    "INPUT_DIR": "../../input/lv9/",
+    "state": "WI",
+    "use_days": 1095,
+    "n_epoch": 250,
+    "interval": 10,
+    "batch_size": 5,
+    "optimizer": "Adam",
+    "lr": 0.0005,
+    "beta1": 0.9,
+    "beta2": 0.7
+}
+
+lv1 RMSE: 3142.2997009684027
+lv2 RMSE: 1306.3884592818752
+lv3 RMSE: 492.6182930806572
+lv4 RMSE: 1433.9486436789787
+lv5 RMSE: 714.9877365417935
+lv6 RMSE: 615.0842148703402
+lv7 RMSE: 311.305896990843
+lv8 RMSE: 238.74090844281613
+lv9 RMSE: 126.54886976307905

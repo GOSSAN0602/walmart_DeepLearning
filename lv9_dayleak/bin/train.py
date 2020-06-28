@@ -31,9 +31,9 @@ parser.add_argument('--debug', type=bool, default=False, help='Length Train Data
 parser.add_argument('--INPUT_DIR', type=str, default='../../input/lv9/', help='Dataset dir')
 parser.add_argument('--state', type=str, default='WI', help='data of state')
 parser.add_argument('--use_days', type=int, default=365*3, help='Length Train Data')
-parser.add_argument('--n_epoch', type=int, default=250)
+parser.add_argument('--n_epoch', type=int, default=500)
 parser.add_argument('--interval', type=int, default=10)
-parser.add_argument('--batch_size', type=int, default=5)
+parser.add_argument('--batch_size', type=int, default=3)
 parser.add_argument('--optimizer', type=str, default='Adam', help='choose from Adam, RAdam, SGD')
 parser.add_argument('--lr', type=float, default=0.0001, help='learning rate')
 parser.add_argument('--beta1', type=float, default=0.9, help='param of adam')
@@ -105,5 +105,5 @@ te_x = torch.from_numpy(input_test_x).float()
 
 # define NN
 #my_model = dilated_CNN(args, n_dyn_fea)
-my_model = amane_wavenet(args, n_dyn_fea)
+my_model = amane_wavenet_v5(args, n_dyn_fea)
 dilated_cnn_trainer(args, my_model, tr_x, tr_t, va_x, va_t, te_x, log_dir)

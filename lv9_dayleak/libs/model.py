@@ -244,7 +244,7 @@ class amane_wavenet(nn.Module):
         self.conv1d_dilated5 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=112, dilation=56)
 
         # layers for concatenating with cat and num features
-        self.dropout_out = Dropout(0.05)
+        self.dropout_out = Dropout(0.0)
         self.dense_concat0 = Linear(in_features=7*n_filters, out_features=int(0.3*7*n_filters))
         self.dense_concat1 = Linear(in_features=int(0.3*7*n_filters), out_features=n_outputs)
     
@@ -267,8 +267,61 @@ class amane_wavenet(nn.Module):
         c_ = torch.cat((h0, h1, h2, h3, h4, h5, h6), 1)
 
         # decode
-        x = self.dropout_out(self.dense_concat0(c_))
+        x = F.relu(self.dropout_out(self.dense_concat0(c_)))
         output = self.dense_concat1(x)
+
+        return output
+
+class amane_wavenet_v3(nn.Module):
+    def __init__(self, args, n_dyn_fea):
+        super(amane_wavenet_v3, self).__init__(
+        )
+        # params
+        seq_len = args.use_days
+        self.n_dyn_fea = n_dyn_fea
+        n_filters = 64
+        n_outputs = 28
+
+        # Dilated convolutional layers
+        self.conv1d = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=3, dilation=1)
+        self.conv1d_dilated0 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=7, dilation=1)
+        self.conv1d_dilated1 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=14, dilation=7)
+        self.conv1d_dilated2 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=28, dilation=14)
+        self.conv1d_dilated3 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=56, dilation=28)
+        self.conv1d_dilated4 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=84, dilation=42)
+        self.conv1d_dilated5 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=112, dilation=56)
+
+        # layers for concatenating with cat and num features
+        self.dropout_out_1 = Dropout(0.3)
+        self.dropout_out_2 = Dropout(0.3)
+        self.dense_concat0 = Linear(in_features=7*n_filters, out_features=int(0.3*7*n_filters))
+        self.dense_concat1 = Linear(in_features=int(0.3*7*n_filters), out_features=int(0.3*7*n_filters))
+        self.dense_concat2 = Linear(in_features=int(0.3*7*n_filters), out_features=int(0.3*7*n_filters))
+        self.dense_concat3 = Linear(in_features=int(0.3*7*n_filters), out_features=n_outputs)
+    
+    def __call__(self, seq_in, t, criterion):
+        pred = self.forward(seq_in)
+        loss = criterion(pred, t.view(pred.shape))
+        return loss, pred
+    
+    def forward(self, seq_in):
+        # conv layers
+        h0,_ = torch.max(F.relu(self.conv1d(seq_in)),-1)
+        h1,_ = torch.max(F.relu(self.conv1d_dilated0(seq_in)),-1)
+        h2,_ = torch.max(F.relu(self.conv1d_dilated1(seq_in)),-1)
+        h3,_ = torch.max(F.relu(self.conv1d_dilated2(seq_in)),-1)
+        h4,_ = torch.max(F.relu(self.conv1d_dilated3(seq_in)),-1)
+        h5,_ = torch.max(F.relu(self.conv1d_dilated4(seq_in)),-1)
+        h6,_ = torch.max(F.relu(self.conv1d_dilated5(seq_in)),-1)
+
+        # Skip connections
+        c_ = torch.cat((h0, h1, h2, h3, h4, h5, h6), 1)
+
+        # decode
+        x = F.relu(self.dense_concat0(c_))
+        x = F.relu(self.dropout_out_1(self.dense_concat1(x)))
+        x = F.relu(self.dropout_out_2(self.dense_concat2(x)))
+        output = self.dense_concat3(x)
 
         return output
 
@@ -298,7 +351,7 @@ class amane_wavenet_v2(nn.Module):
     
     def __call__(self, seq_in, t, criterion):
         pred = self.forward(seq_in)
-        loss = criterion(pred, t)
+        loss = criterion(pred, t.view(pred.shape))
         return loss, pred
     
     def forward(self, seq_in):
@@ -324,5 +377,56 @@ class amane_wavenet_v2(nn.Module):
         # decode
         x = self.dropout_out(self.dense_concat0(c_))
         output = self.dense_concat1(x)
+
+        return output
+
+class amane_wavenet_v5(nn.Module):
+    def __init__(self, args, n_dyn_fea):
+        super(amane_wavenet_v5, self).__init__(
+        )
+        # params
+        seq_len = args.use_days
+        self.n_dyn_fea = n_dyn_fea
+        n_filters = 64
+        n_outputs = 28
+
+        # Dilated convolutional layers
+        self.conv1d = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=3, dilation=1)
+        self.conv1d_dilated0 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=7, dilation=1)
+        self.conv1d_dilated1 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=14, dilation=7)
+        self.conv1d_dilated2 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=28, dilation=14)
+        self.conv1d_dilated3 = CausalConv1d(in_channels=n_dyn_fea, out_channels=n_filters, kernel_size=56, dilation=28)
+
+        # layers for concatenating with cat and num features
+        self.dropout_out_1 = Dropout(0.3)
+        self.dropout_out_2 = Dropout(0.3)
+        self.flatten_out = Flatten()
+        in_dim = 7*n_filters*args.use_days
+        self.dense_concat0 = Linear(in_features=in_dim, out_features=int(0.1*in_dim))
+        self.dense_concat1 = Linear(in_features=int(0.1*in_dim), out_features=int(0.1*0.1*in_dim))
+        self.dense_concat2 = Linear(in_features=int(0.1*0.1*in_dim), out_features=int(0.1*0.1*0.1*in_dim))
+        self.dense_concat3 = Linear(in_features=int(0.1*0.1*0.1*in_dim), out_features=n_outputs)
+    
+    def __call__(self, seq_in, t, criterion):
+        pred = self.forward(seq_in)
+        loss = criterion(pred, t.view(pred.shape))
+        return loss, pred
+    
+    def forward(self, seq_in):
+        # conv layers
+        h0 = F.relu(self.conv1d(seq_in))
+        h1 = F.relu(self.conv1d_dilated0(seq_in))
+        h2 = F.relu(self.conv1d_dilated1(seq_in))
+        h3 = F.relu(self.conv1d_dilated2(seq_in))
+        h4 = F.relu(self.conv1d_dilated3(seq_in))
+        # Skip connections
+        c_ = torch.cat((h0, h1, h2, h3, h4), 1)
+        c_=self.flatten_out(c_)
+
+        # decode
+        x = F.relu(self.dense_concat0(c_))
+        x = F.relu(self.dropout_out_1(self.dense_concat1(x)))
+        x = F.relu(self.dropout_out_2(self.dense_concat2(x)))
+        output = self.dense_concat3(x)
 
         return output
